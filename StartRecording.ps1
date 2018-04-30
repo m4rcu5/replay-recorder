@@ -13,7 +13,6 @@ $recFormat  = 'mp3'
 $recBitrate = 192
 $recDir     = 'C:\Data\Opnames'
 $database   = 'C:\Data\RecordDatabase.csv'
-$programLength = 3550
 
 # Window minimize routine
 $minimizeWindow = {
@@ -59,13 +58,16 @@ if ( $CurrentHour -ne $null ) {
     $recFile = -join($recDir,'\',$CurrentHour.Filename,'.','recording','.',$recFormat)
     $outFile = -join($recDir,'\',$CurrentHour.Filename,'.',$recFormat)
 
+    # Calculate seconds until next top of the hour
+    $recUntil = [int] (New-TimeSpan (Get-Date) (-join(((Get-Date).Hour + 1),':00:00'))).TotalSeconds
+
     # Arguments for fmedia
     $fmediaArgs = @(
         "--record",
         "--dev-capture=$($fmediaDev)",
         "--mpeg-quality=$($recBitrate)",
         "--overwrite",
-        "--until=$($programLength)",
+        "--until=$($recUntil)",
         "--out=$($recFile)",
         "--meta='title=$($CurrentHour.Description)'"
     )
