@@ -7,11 +7,13 @@
 param([switch]$list = $false)
 
 # Variables
-$fmediaDev = 1
-$fmediaExe = 'fmedia.exe'
-$recDir    = 'C:\Data\Opnames'
-$audioDir  = 'C:\Data\Audio'
-$database  = 'C:\Data\RecordDatabase.csv'
+$fmediaDev  = 1
+$fmediaExe  = 'fmedia.exe'
+$recFormat  = 'mp3'
+$recBitrate = 192
+$recDir     = 'C:\Data\Opnames'
+$audioDir   = 'C:\Data\Audio'
+$database   = 'C:\Data\RecordDatabase.csv'
 $programLength = 3550
 
 # Window minimize routine
@@ -57,10 +59,11 @@ if ( $CurrentHour -ne $null ) {
     # Arguments for fmedia
     $fmediaArgs = @(
         "--record",
-        "--dev-capture=$($fmediaDev)"
+        "--dev-capture=$($fmediaDev)",
+        "--mpeg-quality=$($recBitrate)",
         "--overwrite",
         "--until=$($programLength)",
-        "--out=$($recDir)\$($CurrentHour.Filename)",
+        "--out=$($recDir)\$($CurrentHour.Filename).$($recFormat)",
         "--meta='title=$($CurrentHour.Description)'"
     )
 
