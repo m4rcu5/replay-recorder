@@ -12,7 +12,6 @@ $fmediaExe  = 'fmedia.exe'
 $recFormat  = 'mp3'
 $recBitrate = 192
 $recDir     = 'C:\Data\Opnames'
-$audioDir   = 'C:\Data\Audio'
 $database   = 'C:\Data\RecordDatabase.csv'
 $programLength = 3550
 
@@ -56,6 +55,10 @@ if ( $CurrentHour -ne $null ) {
     # Minimize window after delay
     $null = Start-Job -ScriptBlock $minimizeWindow -ArgumentList ([System.Diagnostics.Process]::GetCurrentProcess() | Get-Process)
 
+    # Define our temporary and final file names
+    $recFile = -join($recDir,'\',$CurrentHour.Filename,'.','recording','.',$recFormat)
+    $outFile = -join($recDir,'\',$CurrentHour.Filename,'.',$recFormat)
+
     # Arguments for fmedia
     $fmediaArgs = @(
         "--record",
@@ -63,7 +66,7 @@ if ( $CurrentHour -ne $null ) {
         "--mpeg-quality=$($recBitrate)",
         "--overwrite",
         "--until=$($programLength)",
-        "--out=$($recDir)\$($CurrentHour.Filename).$($recFormat)",
+        "--out=$($recFile)",
         "--meta='title=$($CurrentHour.Description)'"
     )
 
@@ -74,9 +77,11 @@ if ( $CurrentHour -ne $null ) {
     if ($p.ExitCode -eq 0) {
         Write-Host -Foreground "Green" "`nRecording finished successfully!"
 
-        Copy-Item "$($recDir)\$($CurrentHour.Filename)" $audioDir -force
+        Move-Item $recFile $outFile -Force
     } else {
         Write-Host -Foreground "Red" "`nRecording did not finish successfully!"
+
+        Remove-Item $recFile -Force -ErrorAction Ignore
     }
 
 
