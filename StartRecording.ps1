@@ -45,18 +45,33 @@ $CurrentHour = $RecordHours | Where-Object {
 
 # Act on the results
 if ( $CurrentHour -ne $null ) {
-    # A recording has been scheduled
-    Write-Host -Foreground "Green" "Starting recording for program:"
-    Write-Host ( $CurrentHour | Format-Table | Out-String )
-
-    Write-Host "Do not close this window while recording..`n"
-
     # Minimize window after delay
     $null = Start-Job -ScriptBlock $minimizeWindow -ArgumentList ([System.Diagnostics.Process]::GetCurrentProcess() | Get-Process)
 
     # Define our temporary and final file names
     $recFile = -join($recDir,'\',$CurrentHour.Filename,'.','recording','.',$recFormat)
     $outFile = -join($recDir,'\',$CurrentHour.Filename,'.',$recFormat)
+
+    # Check if we are already recording
+    if ( Test-Path $recFile ) {
+        # There seems to be at least a recording in progress file
+        if ( (New-TimeSpan (Get-Item $recFile).LastWriteTime (Get-Date)).Minutes -lt 60 ) {
+            # We are most likely still recording!
+            Write-Host -Foreground "Red" "It seems there is still a recording in progress!, Exiting"
+            Start-Sleep -s 5
+
+            Exit
+        } else {
+            # This seems to be a stale file, we can delete it
+            Remove-Item $recFile -Force
+        }
+    }
+
+    # A recording is about to start
+    Write-Host -Foreground "Green" "Starting recording for program:"
+    Write-Host ( $CurrentHour | Format-Table | Out-String )
+
+    Write-Host "Do not close this window while recording..`n"
 
     # Calculate seconds until next top of the hour
     $recUntil = [int] (New-TimeSpan (Get-Date) (-join(((Get-Date).Hour + 1),':00:00'))).TotalSeconds
@@ -66,7 +81,6 @@ if ( $CurrentHour -ne $null ) {
         "--record",
         "--dev-capture=$($fmediaDev)",
         "--mpeg-quality=$($recBitrate)",
-        "--overwrite",
         "--until=$($recUntil)",
         "--out=$($recFile)",
         "--meta='title=$($CurrentHour.Description)'"
